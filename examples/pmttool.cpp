@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
       return 0;
     }
 
-    std::string device_id = argv[2];
+    uint64_t device_id = std::stoull(std::string(argv[2]), nullptr, 16);
     std::string counter = argv[3];
     std::vector<intelpmt::Device> devices = intelpmt::get_pmt_devices();
     auto dev =

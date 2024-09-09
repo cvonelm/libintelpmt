@@ -52,13 +52,13 @@ public:
 
   const std::filesystem::path get_path() const { return path_; }
 
-  const std::string get_uniqueid() const { return uniqueid_; }
+  const uint64_t get_uniqueid() const { return uniqueid_; }
 
   DeviceInstance open();
 
 protected:
   std::filesystem::path path_;
-  std::string uniqueid_;
+  uint64_t uniqueid_;
   std::map<uint64_t, struct Sample> samples_;
   std::map<std::string, uint64_t> counter_names_;
   std::map<uint64_t, struct Counter> counters_;

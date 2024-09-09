@@ -23,7 +23,7 @@ static sensor_t calc_{{transformation['name']}}(DeviceInstance &device, std::vec
 PMT_{{uniqueid}}::PMT_{{uniqueid}}(std::filesystem::path path)
         : Device(path)
 {
-    uniqueid_ = std::string("{{uniqueid}}");
+    uniqueid_ = 0x{{uniqueid}};
     counter_names_ = { 
 {% for aggregator in aggregators %}
         { "{{aggregator['name']}}", (uint64_t)CounterType::{{aggregator['type']}} } {% if not loop.last %}, {%endif%}

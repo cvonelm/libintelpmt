@@ -51,7 +51,7 @@ Returns a mapping from Counter ID to the `struct Counter` describing how it is c
 
 Returns the sysfs-Path of the PMT Device.
 
-### const std::string get_uniqueid()
+### const uint64_t  get_uniqueid()
 
 Returns the uniqueid of the PMT Device.
 
