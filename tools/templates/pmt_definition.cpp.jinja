@@ -1,0 +1,53 @@
+#include <libintelpmt/pmt_{{uniqueid}}.hpp>
+
+namespace intelpmt
+{
+{% for transformation in transformations %}
+static sensor_t calc_{{transformation['name']}}(DeviceInstance &device, std::vector<uint64_t> args)
+{
+    uint64_t parameter_0 = device.read_sample(args[0]);
+    {% if transformation['twoargs'] %}
+    uint64_t parameter_1 = device.read_sample(args[1]);
+    {% endif %}
+
+    {% if transformation['type'] == 'float' %}
+    double res = {{transformation['function']}};
+    {% else %}
+    uint64_t res = {{transformation['function']}};
+{% endif %}
+    return res;
+}
+{% endfor %}
+
+
+PMT_{{uniqueid}}::PMT_{{uniqueid}}(std::filesystem::path path)
+        : Device(path)
+{
+    uniqueid_ = std::string("{{uniqueid}}");
+    counter_names_ = { 
+{% for aggregator in aggregators %}
+        { "{{aggregator['name']}}", (uint64_t)CounterType::{{aggregator['type']}} } {% if not loop.last %}, {%endif%}
+
+{% endfor %}
+    };
+
+    samples_ = {
+{% for sample in samples %}
+        { (uint64_t)SampleType::{{sample['name']}}, { {{sample['offset']}}, {{sample['size']}} } } {% if not loop.last %}, {%endif%}
+
+{% endfor %}
+    };
+
+    counters_ = {
+{% for aggregator in aggregators %}
+        {  (uint64_t)CounterType::{{aggregator['type']}}, { calc_{{aggregator['function']}}, { 
+    {% for input in aggregator['inputs'] %}
+        (uint64_t)SampleType::{{input}} {% if not loop.last %}, {% endif %}
+
+{% endfor %}
+    } } } {% if not loop.last %}, {% endif %}
+
+{% endfor %}
+    };
+}
+}

@@ -1,0 +1,43 @@
+#include <libintelpmt/device.hpp>
+
+{% for uniqueid in uniqueids %}
+#include <libintelpmt/pmt_{{uniqueid}}.hpp>
+{% endfor %}
+
+#include <filesystem>
+#include <iostream>
+#pragma once
+
+namespace intelpmt
+{
+
+std::vector <Device> get_pmt_devices()
+{
+    std::vector<Device> dev;
+
+    if(!std::filesystem::exists("/sys/class/intel_pmt"))
+    {
+        return dev;
+    }
+    for (auto dir : std::filesystem::directory_iterator("/sys/class/intel_pmt/"))
+    {
+        std::ifstream stream(dir.path() / "guid");
+
+        std::string uniqueid = "";
+        stream >> uniqueid;
+        uniqueid.erase(uniqueid.begin(), uniqueid.begin() + 2);
+{% for uniqueid in uniqueids %}
+    {% if loop.first %} if {% else %} else if {% endif %} 
+        (uniqueid == "{{uniqueid}}")
+        {
+            dev.emplace_back(PMT_{{uniqueid}}(dir.path()));
+        }
+{% endfor %}
+        else
+        {
+            std::cerr << "Unknown pmt_device: " << uniqueid << std::endl;
+        }
+    }
+    return dev;
+}
+}
