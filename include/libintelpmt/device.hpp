@@ -94,8 +94,8 @@ public:
     }
   }
 
-  DeviceInstance(const DeviceInstance &other) = delete;
-  DeviceInstance &operator=(const DeviceInstance &other) = delete;
+  DeviceInstance(DeviceInstance &other) = delete;
+  DeviceInstance &operator=(DeviceInstance &other) = delete;
 
   DeviceInstance(DeviceInstance &&other) : device_(other.device_) {
     buf_ = std::move(other.buf_);
@@ -116,7 +116,7 @@ public:
       fd_ = -1;
     }
 
-    device_ = other.device_;
+    std::swap(device_, other.device_);
 
     buf_ = std::move(other.buf_);
     buf_size_ = std::move(other.buf_size_);
@@ -173,6 +173,7 @@ public:
 
 private:
   Device &device_;
+
   char *buf_ = nullptr;
   size_t buf_size_ = 0;
   int fd_ = -1;

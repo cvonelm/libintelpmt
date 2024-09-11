@@ -11,10 +11,12 @@
 namespace intelpmt
 {
 
-std::vector <Device> get_pmt_devices()
+std::vector <Device>& get_pmt_devices()
 {
-    std::vector<Device> dev;
+    static std::vector<Device> dev;
 
+    if (dev.size() == 0)
+    {
     if(!std::filesystem::exists("/sys/class/intel_pmt"))
     {
         return dev;
@@ -37,6 +39,7 @@ std::vector <Device> get_pmt_devices()
         {
             std::cerr << "Unknown pmt_device: " << uniqueid << std::endl;
         }
+    }
     }
     return dev;
 }
