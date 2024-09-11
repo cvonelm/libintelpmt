@@ -2,6 +2,7 @@ import sys
 import re
 import os
 
+from predefined import predefined
 from lxml import etree
 import jinja2
 
@@ -192,5 +193,23 @@ for file in aggregator_files:
         aggregators=aggregators,
         samples=samples,
     ).dump(dest_dir + "/src/pmt_" + uniqueid + ".cpp")
+
+
+for uniqueid, device in predefined.items():
+    header_template.stream(
+        uniqueid=uniqueid,
+        datatypes=device['datatypes'],
+        transformations=device['transformations'],
+        aggregators=device['aggregators'],
+        samples=device['samples']
+    ).dump(dest_dir + "/include/libintelpmt/pmt_" + uniqueid + ".hpp")
+    cpp_template.stream(
+        uniqueid=uniqueid,
+        datatypes=device['datatypes'],
+        transformations=device['transformations'],
+        aggregators=device['aggregators'],
+        samples=device['samples']
+        ).dump(dest_dir + "/src/pmt_" + uniqueid + ".cpp")
+    uniqueids.append(uniqueid)
 
 union_header_template.stream(uniqueids=uniqueids).dump(dest_dir + "/include/libintelpmt/libintelpmt.hpp")
