@@ -7,7 +7,6 @@
 #include <map>
 #include <stdexcept>
 #include <string>
-#include <variant>
 #include <vector>
 
 extern "C" {
@@ -20,14 +19,18 @@ extern "C" {
 
 namespace intelpmt {
 
-typedef std::variant<uint64_t, double> sensor_t;
 
 class DeviceInstance;
-typedef sensor_t (*counter_read_f)(DeviceInstance &, std::vector<uint64_t>);
+typedef double (*counter_read_f)(DeviceInstance &, std::vector<uint64_t>);
 
 struct Sample {
   uint64_t offset; // in _bit_
   uint64_t size;   // in _bit_
+};
+
+struct Unit {
+    std::string unit;
+    std::string (*print_function)(double);
 };
 
 struct Counter {
@@ -38,16 +41,20 @@ class Device {
 public:
   Device(std::filesystem::path path) : path_(path) {}
 
-  const std::map<std::string, uint64_t> get_counter_names() const {
+  const std::map<std::string, uint64_t>& get_counter_names() const {
     return counter_names_;
   }
 
-  const std::map<uint64_t, struct Sample> get_samples() const {
+  const std::map<uint64_t, struct Sample>& get_samples() const {
     return samples_;
   }
 
-  const std::map<uint64_t, struct Counter> get_counters() const {
+  const std::map<uint64_t, struct Counter>& get_counters() const {
     return counters_;
+  }
+
+  const std::map<uint64_t, struct Unit>& get_units() const {
+    return units_;
   }
 
   const std::filesystem::path get_path() const { return path_; }
@@ -62,6 +69,7 @@ protected:
   std::map<uint64_t, struct Sample> samples_;
   std::map<std::string, uint64_t> counter_names_;
   std::map<uint64_t, struct Counter> counters_;
+  std::map<uint64_t, struct Unit> units_;
 };
 
 class DeviceInstance {
@@ -158,7 +166,7 @@ public:
     return res & mask;
   }
 
-  sensor_t read_counter(uint64_t counter_id) {
+  double read_counter(uint64_t counter_id) {
     const struct Counter counter = device_.get_counters().at(counter_id);
     return counter.read_function(*this, counter.sensors);
   }

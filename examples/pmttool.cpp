@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
 
     for (auto &dev : devices) {
       std::cout << std::endl;
-      std::cout << dev.get_uniqueid() << ":" << std::endl;
+      std::cout << std::hex << dev.get_uniqueid() << ":" << std::endl;
       for (auto &ev : dev.get_counter_names()) {
         std::cout << "\t" << ev.first << std::endl;
       }
@@ -67,8 +67,15 @@ int main(int argc, char **argv) {
               << " every second until Ctrl+C is pressed" << std::endl;
 
     while (true) {
-      std::visit([](auto arg) { std::cout << arg << std::endl; },
-                 instance.read_counter(counter_id));
+        double val = instance.read_counter(counter_id);
+        if(dev->get_units().at(counter_id).unit == "enum")
+        {   
+            std::cout << dev->get_units().at(counter_id).print_function(val) << std::endl;
+        }
+        else
+        {
+            std::cout << val << dev->get_units().at(counter_id).unit << std::endl;
+        }
       std::this_thread::sleep_for(std::chrono::seconds(1));
     }
     return 0;

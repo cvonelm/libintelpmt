@@ -3,7 +3,7 @@
 namespace intelpmt
 {
 {% for transformation in transformations %}
-static sensor_t calc_{{transformation['name']}}(DeviceInstance &device, std::vector<uint64_t> args)
+static double calc_{{transformation['name']}}(DeviceInstance &device, std::vector<uint64_t> args)
 {
     uint64_t parameter_0 = device.read_sample(args[0]);
     {% if transformation['twoargs'] %}
@@ -17,6 +17,22 @@ static sensor_t calc_{{transformation['name']}}(DeviceInstance &device, std::vec
 {% endif %}
     return res;
 }
+{% endfor %}
+
+{% for name, datatype in datatypes.items() %}
+    {% if datatype['type'] == 'enum' %}
+static std::string print_{{name}}(double value)
+{
+        {% for value in datatype['values'] %}
+    {% if loop.first %} if {% else %} else if {% endif %} ( value == {{value[0]}})
+    {
+        return "{{value[1]}}";
+    }
+        {% endfor %}
+    
+    return "UNKNOWN";
+}
+    {% endif %}
 {% endfor %}
 
 
@@ -44,10 +60,30 @@ PMT_{{uniqueid}}::PMT_{{uniqueid}}(std::filesystem::path path)
     {% for input in aggregator['inputs'] %}
         (uint64_t)SampleType::{{input}} {% if not loop.last %}, {% endif %}
 
-{% endfor %}
+    {% endfor %}
     } } } {% if not loop.last %}, {% endif %}
+    
+{% endfor %}
+
+    };
+
+    units_ = {
+{% for aggregator in aggregators %}
+        {  (uint64_t)CounterType::{{aggregator['type']}},
+        {% if datatypes[aggregator['datatype']]['type'] == 'enum' %}
+            { "enum", print_{{aggregator['datatype']}} } 
+        {% else %}
+            {% if datatypes[aggregator['datatype']]['unit'] ==  None %}
+            { "#", nullptr }
+            {% else %}
+            { "{{datatypes[aggregator['datatype']]['unit']}}", nullptr }             
+            {% endif %}
+        {% endif %}
+
+        }{% if not loop.last %}, {% endif %}
 
 {% endfor %}
-    };
+
+};
 }
 }

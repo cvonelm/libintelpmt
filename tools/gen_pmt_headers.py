@@ -46,6 +46,38 @@ def normalize_counter_type(name):
     return name.replace(" ", "_")
 
 
+def parse_data_type(filename):
+    datatypes = {}
+    common_filename = filename[:-15] + "_common.xml"
+    tree =  etree.parse(common_filename, xmlparser)
+    common = tree.getroot()
+    for elem in common.findall("{*}dataType"):
+        datatype = {}
+        name = elem.attrib['datatypeID']
+
+        enum = elem.find("{*}enum")
+        if enum is not None:
+            datatype['type'] = 'enum'
+            datatype['values'] = []
+            for enum_item in enum.findall("{*}enum_item"):
+            
+                enum_type = enum_item.find("{*}dataType").text
+                assert(enum_type == "string")
+                
+                enum_item_enc = enum_item.find("{*}encoding").text
+                enum_item_value = enum_item.find("{*}value").text
+                datatype['values'].append([enum_item_enc, enum_item_value])
+        else:
+            datatype['type'] = 'scalar'
+            unit = elem.find("{*}units")
+            if unit is None:
+                datatype['unit'] = "#";
+            else:
+                symbol = unit.find("{*}symbol")
+                datatype['unit'] = symbol.text
+        datatypes[name] = datatype
+    return datatypes
+
 def parse_aggr_interface(filename):
     transformations = []
     aggregators = []
@@ -81,6 +113,7 @@ def parse_aggr_interface(filename):
         if "reserved" in name.lower():
             continue
         inputs = []
+        datatype = elem.attrib['datatypeIDREF']
         for input in elem.iter("{*}TransFormInput"):
             input_group = input.find("{*}sampleGroupIDREF").text
             input_id = input.find("{*}sampleIDREF").text
@@ -90,6 +123,7 @@ def parse_aggr_interface(filename):
             {
                 "name": name,
                 "type": counter_type,
+                "datatype" : datatype,
                 "function": trans_func,
                 "inputs": inputs,
             }
@@ -125,6 +159,7 @@ os.makedirs(dest_dir + "/src", exist_ok=True)
 uniqueids = []
 for file in aggregator_files:
     transformations, aggregators = parse_aggr_interface(file)
+    datatypes = parse_data_type(file)
     outer_size = 0
     pmt_device = {}
     aggregator = etree.parse(file, xmlparser).getroot()
@@ -145,12 +180,14 @@ for file in aggregator_files:
         outer_size = outer_size + int(sample_group.find("{*}length").text)
     header_template.stream(
         uniqueid=uniqueid,
+        datatypes=datatypes,
         transformations=transformations,
         aggregators=aggregators,
         samples=samples,
     ).dump(dest_dir + "/include/libintelpmt/pmt_" + uniqueid + ".hpp")
     cpp_template.stream(
         uniqueid=uniqueid,
+        datatypes=datatypes,
         transformations=transformations,
         aggregators=aggregators,
         samples=samples,
